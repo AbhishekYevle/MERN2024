@@ -52,7 +52,13 @@ const register = async (req, res) => {
                 password: hash_password,
             });
 
-        res.status(200).json({ msg: userCreated });
+        res.status(200).json(
+            { 
+                // msg: userCreated,
+                msg: "Registration Successfull.", 
+                token: await userCreated.generateToken(), 
+                userId: userCreated._id.toString() 
+            });
 
 
         // res.status(200).send("This is Registration Page.");
@@ -74,16 +80,36 @@ const register = async (req, res) => {
 module.exports.register = register;
 
 // *------------------------
-// Login Logic 
+// User Login Logic 
 // *------------------------
 
 const login = async (req, res) => {
     try {
-        res
-            .status(200)
-            .send("Welcome to Login Page.");
+
+        const { email, password } = req.body;
+
+        const userExists = await User.findOne( { email: email } );
+
+        if(!userExists) {
+            return res.status(400).json( { msg: "Invalid Creadentials"} );
+        };
+
+        const macthPassword = await bcrypt.compare( password, userExists.password ); 
+
+        if(macthPassword) {
+            res.status(200).json(
+                { 
+                    // msg: userCreated,
+                    msg: "Login Successfull.", 
+                    token: await userExists.generateToken(), 
+                    userId: userExists._id.toString() 
+                });    
+        } else {
+            res.status(401).json( { msg: "Invalid Email or Password."} );
+        }
+            // res.status(200).send("Welcome to Login Page.");
     } catch (error) {
-        res.status(404).send({msg:"Page Not Found"});
+        res.status(500).send({msg:"Page Not Found"});
     }
 }
 module.exports.login = login;
